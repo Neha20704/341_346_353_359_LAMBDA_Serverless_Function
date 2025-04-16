@@ -17,3 +17,4 @@ class FunctionOut(FunctionCreate):
 class ExecuteFunctionRequest(BaseModel):
     id: int  # Expecting an 'id' field
     args: Optional[List[str]] = None
+    use_gvisor: Optional[bool] = False

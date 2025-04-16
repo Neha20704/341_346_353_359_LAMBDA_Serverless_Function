@@ -16,7 +16,7 @@ def init_container_pool():
     for _ in range(POOL_SIZE):
         container_pool.put(None)  # Placeholder if you implement persistent containers
 
-def run_function(language, filename, args=None, timeout=5):
+def run_function(language, filename, args=None, timeout=5,use_gvisor=False):
     container = f"lambda-{language}"
     func_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../docker/functions", language))
 
@@ -30,6 +30,11 @@ def run_function(language, filename, args=None, timeout=5):
     if args:
         import json
         cmd += ["-e", f"ARGS={json.dumps(args)}"]
+
+    # ✅ Add gVisor runtime flag if needed
+    if use_gvisor:
+        cmd += ["--runtime=runsc"]
+
 
     # Add image name last
     cmd.append(container)

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from . import models, schemas, crud, database
+from .schemas import ExecuteFunctionRequest
 
 import sys
 import os
@@ -46,15 +47,19 @@ def delete(function_id: int, db: Session = Depends(get_db)):
     return {"deleted": True}
 
 @app.post("/functions/execute")
-async def execute_function(request: schemas.ExecuteFunctionRequest, db: Session = Depends(get_db)):
+def execute_function(request: ExecuteFunctionRequest, db: Session = Depends(get_db)):
     function_id = request.id
-    args = request.args or []  # Default to empty list if None
+    args = request.args or []
+    use_gvisor = request.use_gvisor
 
-    # Get metadata from DB using function_id
     func = db.query(models.Function).filter(models.Function.id == function_id).first()
     if not func:
         raise HTTPException(status_code=404, detail="Function not found")
 
-    # Run the function with args
-    output, error = runner.run_function(func.language, func.route, args=args, timeout=func.timeout)
+    output, error = runner.run_function(
+        func.language, func.route,
+        args=args,
+        timeout=func.timeout,
+        use_gvisor=use_gvisor
+    )
     return {"output": output, "error": error}
