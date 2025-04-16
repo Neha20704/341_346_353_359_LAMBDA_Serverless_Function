@@ -1,4 +1,4 @@
 FROM python:3.12-slim
-WORKDIR /app
-COPY handler.py .
-CMD ["python", "handler.py"]
+WORKDIR /functions
+COPY handler.py /app/handler.py
+CMD ["python", "/app/handler.py"]

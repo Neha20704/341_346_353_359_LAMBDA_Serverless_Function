@@ -1,4 +1,4 @@
 FROM node:18-alpine
-WORKDIR /app
-COPY handler.js .
-CMD ["node", "handler.js"]
+WORKDIR /functions
+COPY handler.js /app/handler.js
+CMD ["node", "/app/handler.js"]
