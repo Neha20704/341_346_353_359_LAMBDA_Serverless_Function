@@ -1,6 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from . import models, schemas, crud, database
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../executor")))
+import runner  # ✅ this imports runner.py from the executor/ folder
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -15,7 +20,12 @@ def get_db():
 
 @app.post("/functions", response_model=schemas.FunctionOut)
 def create(function: schemas.FunctionCreate, db: Session = Depends(get_db)):
-    return crud.create_function(db, function)
+    try:
+        return crud.create_function(db, function)
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")  # Log the error for debugging
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 @app.get("/functions", response_model=list[schemas.FunctionOut])
 def read_all(db: Session = Depends(get_db)):
@@ -34,3 +44,17 @@ def delete(function_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Function not found")
     return {"deleted": True}
+
+@app.post("/functions/execute")
+async def execute_function(request: schemas.ExecuteFunctionRequest, db: Session = Depends(get_db)):
+    function_id = request.id
+    args = request.args or []  # Default to empty list if None
+
+    # Get metadata from DB using function_id
+    func = db.query(models.Function).filter(models.Function.id == function_id).first()
+    if not func:
+        raise HTTPException(status_code=404, detail="Function not found")
+
+    # Run the function with args
+    output, error = runner.run_function(func.language, func.route, args=args, timeout=func.timeout)
+    return {"output": output, "error": error}
