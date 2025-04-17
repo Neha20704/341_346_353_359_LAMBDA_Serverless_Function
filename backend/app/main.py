@@ -100,3 +100,19 @@ def get_metric_summary(db: Session = Depends(get_db)):
         } for s in summary
     ]
     return JSONResponse(content=results)
+#update function
+@app.put("/functions/{function_id}", response_model=schemas.FunctionOut)
+def update_function(function_id: int, function: schemas.FunctionCreate, db: Session = Depends(get_db)):
+    func = crud.get_function(db, function_id)
+    if not func:
+        raise HTTPException(status_code=404, detail="Function not found")
+
+    # Update fields
+    func.name = function.name
+    func.language = function.language
+    func.route = function.route
+    func.timeout = function.timeout
+
+    db.commit()
+    db.refresh(func)
+    return func
