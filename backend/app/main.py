@@ -1,7 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+#from fastapi.responses import JSONResponse
 from . import models, schemas, crud, database
 from .schemas import ExecuteFunctionRequest
+import time
+from .crud import log_metric
+
 
 import sys
 import os
@@ -56,10 +62,41 @@ def execute_function(request: ExecuteFunctionRequest, db: Session = Depends(get_
     if not func:
         raise HTTPException(status_code=404, detail="Function not found")
 
+    start = time.time()
     output, error = runner.run_function(
         func.language, func.route,
         args=args,
         timeout=func.timeout,
         use_gvisor=use_gvisor
     )
+    duration = time.time() - start
+    was_error = bool(error)
+    
+    log_metric(db, function_id=func.id, time_taken=duration, was_error=was_error, error_message=error if was_error else None)
+
     return {"output": output, "error": error}
+
+#endpoint to view metrics
+@app.get("/metrics", response_model=list[schemas.MetricOut])
+def get_all_metrics(db: Session = Depends(get_db)):
+    return db.query(models.ExecutionMetric).all()
+
+#Metrics aggregation
+@app.get("/metrics/summary")
+def get_metric_summary(db: Session = Depends(get_db)):
+    summary = db.query(
+        models.ExecutionMetric.function_id,
+        func.count().label("total_calls"),
+        func.avg(models.ExecutionMetric.execution_time).label("avg_time"),
+        func.sum(func.if_(models.ExecutionMetric.was_error == True, 1, 0)).label("error_count")
+    ).group_by(models.ExecutionMetric.function_id).all()
+
+    results = [
+        {
+            "function_id": s.function_id,
+            "total_calls": s.total_calls,
+            "avg_time": round(s.avg_time, 3),
+            "error_count": int(s.error_count)
+        } for s in summary
+    ]
+    return JSONResponse(content=results)

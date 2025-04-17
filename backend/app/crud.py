@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
+from .models import ExecutionMetric
+
 
 def get_functions(db: Session):
     return db.query(models.Function).all()
@@ -21,3 +23,17 @@ def delete_function(db: Session, function_id: int):
         db.commit()
         return True
     return False
+
+
+def log_metric(db: Session, function_id: int, time_taken: float, was_error: bool, error_message: str = None):
+    metric = ExecutionMetric(
+        function_id=function_id,
+        execution_time=time_taken,
+        was_error=was_error,
+        error_message=error_message
+    )
+    db.add(metric)
+    db.commit()
+    db.refresh(metric)
+    return metric
+
