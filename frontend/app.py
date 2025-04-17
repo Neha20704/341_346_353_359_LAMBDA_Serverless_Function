@@ -31,7 +31,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     if st.button("Create Function"):
@@ -45,6 +45,9 @@ with col3:
 with col4:
     if st.button("Update Function"):
         st.session_state.page = "Update Function"
+with col5:
+    if st.button("Execute Function"):
+        st.session_state.page = "Execute Function"
 # Main content
 st.title("Lambda Serverless Function Manager")
 
@@ -128,3 +131,27 @@ elif st.session_state.page == "Update Function":
                 st.error(f"Update failed: {res.text}")
     else:
         st.error("Could not fetch functions.")
+# Execute Function Page
+elif st.session_state.page == "Execute Function":
+    st.subheader("⚡ Execute Function")
+
+    function_id = st.number_input("Function ID", min_value=1, step=1)
+    raw_args = st.text_input("Arguments (comma-separated)", value="")
+    use_gvisor = st.checkbox("Use gVisor Runtime", value=False)
+
+    if st.button("Execute"):
+        args = [arg.strip() for arg in raw_args.split(",") if arg.strip()]
+        payload = {
+            "id": int(function_id),
+            "args": args,
+            "use_gvisor": use_gvisor
+        }
+        response = requests.post(f"{API_URL}/functions/execute", json=payload)
+        if response.status_code == 200:
+            data = response.json()
+            st.success("✅ Function Executed!")
+            st.code(data.get("output", ""), language="text")
+            if data.get("error"):
+                st.error(data["error"])
+        else:
+            st.error("Function execution failed.")
