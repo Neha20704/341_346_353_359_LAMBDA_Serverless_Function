@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pandas as pd
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -31,7 +32,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     if st.button("Create Function"):
@@ -48,6 +49,10 @@ with col4:
 with col5:
     if st.button("Execute Function"):
         st.session_state.page = "Execute Function"
+with col6:
+    if st.button("Monitoring Dashboard"):
+        st.session_state.page = "Monitoring Dashboard"
+
 # Main content
 st.title("Lambda Serverless Function Manager")
 
@@ -155,3 +160,51 @@ elif st.session_state.page == "Execute Function":
                 st.error(data["error"])
         else:
             st.error("Function execution failed.")
+            
+# Dashboard Page
+elif st.session_state.page == "Monitoring Dashboard":
+    st.subheader(" Monitoring Dashboard")
+
+    try:
+        response = requests.get(f"{API_URL}/metrics/summary")
+        if response.status_code != 200:
+            st.warning("Could not load metrics.")
+        else:
+            summary = response.json()
+            if not summary:
+                st.info("No metrics available yet.")
+            else:
+                df = pd.DataFrame(summary)
+                df["function"] = df["function_id"].astype(str)
+
+                # System-wide overview
+                st.write("## System-wide Metrics")
+                total_calls = df["total_calls"].sum()
+                total_errors = df["error_count"].sum()
+                avg_exec_time = round((df["avg_time"] * df["total_calls"]).sum() / total_calls, 3) if total_calls else 0
+
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Total Calls", total_calls)
+                col2.metric("Total Errors", total_errors)
+                col3.metric("Avg Exec Time", f"{avg_exec_time} sec")
+
+                # Charts
+                st.write("###  Total Calls per Function")
+                st.bar_chart(df.set_index("function")["total_calls"])
+
+                st.write("###  Error Count per Function")
+                st.bar_chart(df.set_index("function")["error_count"])
+
+                st.write("###  Average Execution Time (sec)")
+                st.line_chart(df.set_index("function")["avg_time"])
+
+                # Expanders for individual functions
+                st.write("## Per-Function Metrics")
+                for item in summary:
+                    with st.expander(f"Function ID: {item['function_id']}"):
+                        st.write(f"Total Calls: {item['total_calls']}")
+                        st.write(f"Average Time: {item['avg_time']} sec")
+                        st.write(f"Error Count: {item['error_count']}")
+
+    except Exception as e:
+        st.error(f"Failed to load dashboard: {e}")
