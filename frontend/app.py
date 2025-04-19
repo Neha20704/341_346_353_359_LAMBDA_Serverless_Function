@@ -3,10 +3,16 @@ import requests
 import pandas as pd
 
 API_URL = "http://127.0.0.1:8000"
+AUTH_TOKEN = "secret123"  # This must match FastAPI's internal token
+HEADERS = {"Authorization": f"Bearer {AUTH_TOKEN}"}
 
 # Initialize session state
 if "page" not in st.session_state:
     st.session_state.page = "Create Function"
+
+# Initialize auth flag
+if "dashboard_authenticated" not in st.session_state:
+    st.session_state.dashboard_authenticated = False
 
 # Menu bar with buttons
 st.markdown("""
@@ -53,7 +59,7 @@ with col6:
     if st.button("Monitoring Dashboard"):
         st.session_state.page = "Monitoring Dashboard"
 
-# Main content
+# Main title
 st.title("Lambda Serverless Function Manager")
 
 # Create Function Page
@@ -109,7 +115,6 @@ elif st.session_state.page == "Delete Function":
 # Update Function Page
 elif st.session_state.page == "Update Function":
     st.subheader("✏️ Update Existing Function")
-
     response = requests.get(f"{API_URL}/functions")
     if response.ok:
         functions = response.json()
@@ -136,6 +141,7 @@ elif st.session_state.page == "Update Function":
                 st.error(f"Update failed: {res.text}")
     else:
         st.error("Could not fetch functions.")
+
 # Execute Function Page
 elif st.session_state.page == "Execute Function":
     st.subheader("⚡ Execute Function")
@@ -160,13 +166,26 @@ elif st.session_state.page == "Execute Function":
                 st.error(data["error"])
         else:
             st.error("Function execution failed.")
-            
-# Dashboard Page
+
+# Monitoring Dashboard (with token gate)
 elif st.session_state.page == "Monitoring Dashboard":
     st.subheader(" Monitoring Dashboard")
 
+    # Prompt for token if not yet authenticated
+    if not st.session_state.dashboard_authenticated:
+        with st.sidebar:
+            st.markdown("### 🔐 Token Required to View Dashboard")
+            token_input = st.text_input("Enter API Token", type="password")
+            if st.button("Unlock Dashboard"):
+                if token_input == AUTH_TOKEN:
+                    st.session_state.dashboard_authenticated = True
+                    st.success("Access granted.")
+                else:
+                    st.error("Invalid token.")
+        st.stop()
+
     try:
-        response = requests.get(f"{API_URL}/metrics/summary")
+        response = requests.get(f"{API_URL}/metrics/summary", headers=HEADERS)
         if response.status_code != 200:
             st.warning("Could not load metrics.")
         else:
@@ -177,7 +196,6 @@ elif st.session_state.page == "Monitoring Dashboard":
                 df = pd.DataFrame(summary)
                 df["function"] = df["function_id"].astype(str)
 
-                # System-wide overview
                 st.write("## System-wide Metrics")
                 total_calls = df["total_calls"].sum()
                 total_errors = df["error_count"].sum()
@@ -188,17 +206,15 @@ elif st.session_state.page == "Monitoring Dashboard":
                 col2.metric("Total Errors", total_errors)
                 col3.metric("Avg Exec Time", f"{avg_exec_time} sec")
 
-                # Charts
                 st.write("###  Total Calls per Function")
                 st.bar_chart(df.set_index("function")["total_calls"])
 
                 st.write("###  Error Count per Function")
                 st.bar_chart(df.set_index("function")["error_count"])
 
-                st.write("###  Average Execution Time (sec)")
+                st.write("### Average Execution Time (sec)")
                 st.line_chart(df.set_index("function")["avg_time"])
 
-                # Expanders for individual functions
                 st.write("## Per-Function Metrics")
                 for item in summary:
                     with st.expander(f"Function ID: {item['function_id']}"):

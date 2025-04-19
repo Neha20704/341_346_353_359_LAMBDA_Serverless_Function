@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Header
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -7,7 +7,7 @@ from . import models, schemas, crud, database
 from .schemas import ExecuteFunctionRequest
 import time
 from .crud import log_metric
-
+#from fastapi import Header
 
 import sys
 import os
@@ -15,6 +15,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../e
 import runner  # ✅ this imports runner.py from the executor/ folder
 
 models.Base.metadata.create_all(bind=database.engine)
+
+
+API_TOKEN = "secret123"  #special token
+def verify_token(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=403, detail="Invalid token format")
+    
+    token = authorization.split(" ")[1]
+    if token != API_TOKEN:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
 
 app = FastAPI()
 
@@ -78,12 +89,19 @@ def execute_function(request: ExecuteFunctionRequest, db: Session = Depends(get_
 
 #endpoint to view metrics
 @app.get("/metrics", response_model=list[schemas.MetricOut])
-def get_all_metrics(db: Session = Depends(get_db)):
+def get_all_metrics(
+    db: Session = Depends(get_db),
+    auth: str = Depends(verify_token)
+):
     return db.query(models.ExecutionMetric).all()
 
 #Metrics aggregation
 @app.get("/metrics/summary")
-def get_metric_summary(db: Session = Depends(get_db)):
+def get_metric_summary(
+    db: Session = Depends(get_db),
+    auth: str = Depends(verify_token)
+):
+    from sqlalchemy import func
     summary = db.query(
         models.ExecutionMetric.function_id,
         func.count().label("total_calls"),
@@ -91,7 +109,7 @@ def get_metric_summary(db: Session = Depends(get_db)):
         func.sum(func.if_(models.ExecutionMetric.was_error == True, 1, 0)).label("error_count")
     ).group_by(models.ExecutionMetric.function_id).all()
 
-    results = [
+    return [
         {
             "function_id": s.function_id,
             "total_calls": s.total_calls,
@@ -99,7 +117,8 @@ def get_metric_summary(db: Session = Depends(get_db)):
             "error_count": int(s.error_count)
         } for s in summary
     ]
-    return JSONResponse(content=results)
+
+
 #update function
 @app.put("/functions/{function_id}", response_model=schemas.FunctionOut)
 def update_function(function_id: int, function: schemas.FunctionCreate, db: Session = Depends(get_db)):
