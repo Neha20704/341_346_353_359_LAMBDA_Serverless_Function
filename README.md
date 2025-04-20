@@ -1,4 +1,4 @@
-#LAMBDA - Serverless Function Platform  
+# LAMBDA - Serverless Function Platform  
 **UE22CS351B: Cloud Computing Project**  
 Team: SRNs 341, 346, 353, 359  
 
