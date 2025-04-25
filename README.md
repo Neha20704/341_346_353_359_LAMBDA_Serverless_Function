@@ -68,16 +68,28 @@ docker build -t lambda-javascript ./docker/base_images/javascript
 ```bash
 docker run --rm --runtime=runsc hello-world
 ```
+### Start sql service and login first
+```bash
+sudo service mysql start
+mysql -u root -p
+```
+### stop running docker service and restart
+```bash
+sudo service docker stop
+sudo dockerd
+```
 
 ###  Run backend
 ```bash
-cd backend/app
+cd backend
+source venv/bin/activate
 uvicorn app.main:app --reload
 ```
 
 ### Run frontend
 ```bash
 cd frontend
+source venv/bin/activate
 streamlit run app.py
 ```
 
@@ -142,10 +154,10 @@ streamlit run app.py
 
 | Name | SRN |
 |------|-----|
-| Member 1 | PES2UG22CS341 |
-| Member 2 | PES2UG22CS346 |
-| Member 3 | PES2UG22CS353 |
-| Member 4 | PES2UG22CS359 |
+| Naru Meghana | PES2UG22CS341 |
+| Neha Girish | PES2UG22CS346 |
+| Nida Fathima | PES2UG22CS353 |
+| Nikhita Gejjalli | PES2UG22CS359 |
 
 ---
 
