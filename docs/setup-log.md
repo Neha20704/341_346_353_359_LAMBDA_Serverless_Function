@@ -1,10 +1,10 @@
 # 🛠️ Lambda - Serverless Function Platform | Setup & Log
 
 ## 👤 Team Members
-- 341 - Member 1
-- 346 - Member 2
-- 353 - Member 3
-- 359 - Member 4
+- 341 - Meghana 
+- 346 - Neha
+- 353 - Nida
+- 359 - Nikhita
 
 ---
 
