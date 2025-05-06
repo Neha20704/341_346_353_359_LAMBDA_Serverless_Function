@@ -1,6 +1,6 @@
-# 🛠️ Lambda - Serverless Function Platform | Setup & Log
+#  Lambda - Serverless Function Platform | Setup & Log
 
-## 👤 Team Members
+## Team Members
 - 341 - Meghana 
 - 346 - Neha
 - 353 - Nida
@@ -8,15 +8,15 @@
 
 ---
 
-## ⚙️ Environment Setup
+##  Environment Setup
 
-### ✅ OS & Virtualization
+### OS & Virtualization
 - OS: Windows 11 with WSL 2 (Ubuntu)
 - Virtualization: Docker (with Docker Desktop disabled)
 - Used `docker` service directly from WSL
 - Enabled **gVisor** as second runtime via `runsc`
 
-### ✅ Docker & gVisor Verification
+### Docker & gVisor Verification
 ```bash
 $ docker info | grep runsc
 Runtimes: io.containerd.runc.v2 runc runsc
@@ -24,12 +24,12 @@ Runtimes: io.containerd.runc.v2 runc runsc
 
 ```bash
 $ docker run --rm --runtime=runsc hello-world
-✔️ Docker with gVisor works!
+Docker with gVisor works!
 ```
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 lambda_serverless/
@@ -61,7 +61,7 @@ lambda_serverless/
 
 ---
 
-## 🛠️ Initial Setup
+## Initial Setup
 
 ```bash
 # Clone Repo
@@ -90,7 +90,7 @@ docker build -t lambda-javascript .
 
 ---
 
-## 🧪 Testing Locally
+## Testing Locally
 
 ```bash
 # Start backend API
@@ -108,7 +108,7 @@ streamlit run app.py
 
 ---
 
-## 🔐 gVisor Runtime Test
+## gVisor Runtime Test
 
 ```bash
 # Run with default Docker (runc)
@@ -122,7 +122,7 @@ docker run --rm --runtime=runsc -v "$PWD/docker/functions:/functions" \
 
 ---
 
-## 📊 Database Tables
+## Database Tables
 
 ### `functions`
 | id | name     | language | route         | timeout |
@@ -136,7 +136,7 @@ docker run --rm --runtime=runsc -v "$PWD/docker/functions:/functions" \
 
 ---
 
-## ✅ Final Checklist
+## Final Checklist
 
 - [x] Backend working (CRUD, Execution)
 - [x] Frontend: Create, List, Execute, Delete, Update
