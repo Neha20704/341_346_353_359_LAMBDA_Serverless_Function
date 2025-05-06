@@ -113,8 +113,8 @@ streamlit run app.py
 | `/functions` | GET / POST | List or create function metadata |
 | `/functions/{id}` | DELETE / PUT | Delete or update a function |
 | `/functions/execute` | POST | Execute a function with `id`, `args`, `use_gvisor` |
-| `/metrics` | GET | Get all raw metrics (🔐 Auth required) |
-| `/metrics/summary` | GET | Aggregated metrics summary (🔐 Auth required) |
+| `/metrics` | GET | Get all raw metrics (Auth required) |
+| `/metrics/summary` | GET | Aggregated metrics summary (Auth required) |
 
 ---
 
@@ -167,6 +167,6 @@ streamlit run app.py
 > ✅ **Week 2**: Routing, warm-up, gVisor support, metrics  
 > ✅ **Week 3**: Frontend UI, dashboard, integration, auth  
 
-> 📦 Fully working system with clean docs, token protection, visual monitoring, and two runtime options!
+>  Fully working system with clean docs, token protection, visual monitoring, and two runtime options!
 ```
 
